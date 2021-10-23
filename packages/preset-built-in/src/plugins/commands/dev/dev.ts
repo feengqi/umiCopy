@@ -63,10 +63,12 @@ export default (api: IApi) => {
     stage: -1,
   });
 
+  // 注册启动的dev插件
   api.registerCommand({
     name: 'dev',
     description: 'start a dev server for development',
-    fn: async function ({ args }) {
+    fn: async function({ args }) {
+      // 获取设置的端口
       const defaultPort =
         // @ts-ignore
         process.env.PORT || args?.port || api.config.devServer?.port;
@@ -74,13 +76,14 @@ export default (api: IApi) => {
         port: defaultPort ? parseInt(String(defaultPort), 10) : 8000,
       });
       // @ts-ignore
+      // 获取hostname
       hostname = process.env.HOST || api.config.devServer?.host || '0.0.0.0';
       console.log(chalk.cyan('Starting the development server...'));
       process.send?.({ type: 'UPDATE_PORT', port });
 
       // enable https, HTTP/2 by default when using --https
       const isHTTPS = process.env.HTTPS || args?.https;
-
+      // 清理缓存.catch文件
       cleanTmpPathExceptCache({
         absTmpPath: paths.absTmpPath!,
       });
@@ -110,7 +113,7 @@ export default (api: IApi) => {
               console.log();
               api.logger.info(
                 `Plugins of ${pluginChanged
-                  .map((p) => p.key)
+                  .map(p => p.key)
                   .join(', ')} changed.`,
               );
               api.restartServer();
@@ -139,16 +142,14 @@ export default (api: IApi) => {
                 api.logger.info(`Config ${reloadConfigs.join(', ')} changed.`);
                 api.restartServer();
               } else {
-                api.service.userConfig =
-                  api.service.configInstance.getUserConfig();
+                api.service.userConfig = api.service.configInstance.getUserConfig();
 
                 // TODO: simplify, 和 Service 里的逻辑重复了
                 // 需要 Service 露出方法
                 const defaultConfig = await api.applyPlugins({
                   key: 'modifyDefaultConfig',
                   type: api.ApplyPluginsType.modify,
-                  initialValue:
-                    await api.service.configInstance.getDefaultConfig(),
+                  initialValue: await api.service.configInstance.getDefaultConfig(),
                 });
                 api.service.config = await api.applyPlugins({
                   key: 'modifyConfig',
@@ -161,7 +162,7 @@ export default (api: IApi) => {
                 if (regenerateTmpFiles) {
                   await generateFiles({ api });
                 } else {
-                  fns.forEach((fn) => fn());
+                  fns.forEach(fn => fn());
                 }
               }
             }
@@ -176,8 +177,11 @@ export default (api: IApi) => {
       await delay(500);
 
       // dev
-      const { bundler, bundleConfigs, bundleImplementor } =
-        await getBundleAndConfigs({ api, port });
+      const {
+        bundler,
+        bundleConfigs,
+        bundleImplementor,
+      } = await getBundleAndConfigs({ api, port });
       const opts: IServerOpts = bundler.setupDevServerOpts({
         bundleConfigs: bundleConfigs,
         bundleImplementor,
